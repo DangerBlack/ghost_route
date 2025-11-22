@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ghost Route - Encrypted URL Shortener</title>
+  <style>
+    .floating-word {
+      position: fixed;
+      left: 0;
+      top: 0;
+      pointer-events: none;
+      color: #0f0;
+      font-family: monospace;
+      font-weight: bold;
+      opacity: 0;
+      z-index: 0;
+      transition: opacity 0.8s linear;
+      will-change: transform, opacity, font-size;
+    }
+    body {
+      background: #111;
+      color: #0f0;
+      font-family: monospace, 'Fira Mono', 'Consolas', 'Menlo', 'Courier', monospace;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      background: #181818;
+      border: 1px solid #0f0;
+      border-radius: 8px;
+      padding: 2em 2.5em;
+      box-shadow: 0 0 16px #0f03;
+      min-width: 320px;
+      max-width: 90vw;
+    }
+    h1 {
+      color: #0f0;
+      font-size: 1.5em;
+      margin-bottom: 0.5em;
+      letter-spacing: 2px;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5em;
+      color: #0f0;
+    }
+    input[type="url"] {
+      width: 100%;
+      padding: 0.5em;
+      background: #222;
+      color: #0f0;
+      border: 1px solid #0f0;
+      border-radius: 4px;
+      font-size: 1em;
+      margin-bottom: 1em;
+    }
+    button {
+      background: #0f0;
+      color: #111;
+      border: none;
+      border-radius: 4px;
+      padding: 0.5em 1.5em;
+      font-size: 1em;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #0c0;
+    }
+    .result {
+      margin-top: 1.5em;
+      background: #222;
+      border: 1px dashed #0f0;
+      border-radius: 4px;
+      padding: 1em;
+      word-break: break-all;
+      color: #0f0;
+      font-size: 1.1em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1em;
+    }
+    .copy-btn {
+      background: #0f0;
+      color: #111;
+      border: none;
+      border-radius: 4px;
+      padding: 0.2em 0.8em;
+      font-size: 0.95em;
+      cursor: pointer;
+      margin-left: 0.5em;
+    }
+    .copy-btn:hover {
+      background: #0c0;
+    }
+    .footer {
+      margin-top: 2em;
+      color: #0f0a;
+      font-size: 0.9em;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Ghost Route</h1>
+    <form id="shorten-form" autocomplete="off">
+      <label for="url">Enter URL to encrypt &amp; proxy:</label>
+      <input type="url" id="url" name="url" placeholder="https://example.com/" required>
+      <button type="submit">Generate Encrypted Link</button>
+    </form>
+    <div id="result" class="result" style="display:none;"></div>
+  </div>
+  <div class="footer">Encrypted Proxy &middot; Open source</div>
+    <div class="container" style="margin-top:2em; background:#111; border:1px solid #0f0;">
+      <h2 style="color:#0f0; font-size:1.1em; margin-bottom:0.5em;">Technology & Privacy</h2>
+      <p style="color:#0f0; font-size:1em; margin-bottom:1em;">
+        <strong>Ghost Route</strong> is a passthrough encrypted proxy. It does <b>not log</b> or store any information about your requests, nor is it responsible for the content of the provided URLs. All links are encrypted and only accessible to those with the generated link.
+      </p>
+      <p style="color:#0f0; font-size:1em; margin-bottom:1em;">
+        This design offers <b>censorship resistance</b>: the source URL is hidden from intermediaries, governments, or other entities. Only the encrypted link reveals the destination, making it difficult to block or monitor specific content. No browsing history or logs are kept, and the server does not retain any user data.
+      </p>
+      <p style="color:#0f0; font-size:1em;">
+        <b>Disclaimer:</b> You are solely responsible for the URLs you submit. Ghost Route does not endorse or control the content of proxied sites.
+          <p style="color:#0f0; font-size:1em; margin-top:1em; font-weight:bold;">
+            <b>Legal Disclaimer:</b> This service is strictly <b><u>forbidden</u></b> to be used for accessing, sharing, or distributing <b><u>copyrighted material</u></b> without authorization, or for any <b><u>illegal activities</u></b>, including but not limited to <b><u>child exploitation</u></b>, <b><u>abuse</u></b>, or any content <b><u>prohibited by law</u></b>. Any such use is strictly <b><u>prohibited</u></b> and may be reported to the appropriate authorities. By using this service, you agree to comply with all applicable laws and regulations.
+          </p>
+      </p>
+    </div>
+  <script>
+    const form = document.getElementById('shorten-form');
+    const resultDiv = document.getElementById('result');
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      resultDiv.style.display = 'none';
+      const url = document.getElementById('url').value;
+      try {
+        const res = await fetch(`/shorten?url=${encodeURIComponent(url)}`, { method: 'POST' });
+        if (!res.ok) throw new Error('Request failed');
+        const data = await res.json();
+        resultDiv.innerHTML = `<span>${data.link}</span><button class='copy-btn' onclick='navigator.clipboard.writeText("${data.link}")'>copy</button>`;
+        resultDiv.style.display = 'flex';
+      } catch (err) {
+        resultDiv.innerHTML = `<span style='color:#f00'>Error: ${err.message}</span>`;
+        resultDiv.style.display = 'block';
+      }
+    });
+
+    // Floating privacy words
+    const privacyWords = [
+      // English
+      'privacy', 'anonymity', 'encryption', 'freedom', 'no logs', 'secure', 'censorship resistance', 'proxy', 'hidden', 'confidential', 'trustless', 'safety', 'untraceable', 'liberty', 'protection', 'shield', 'stealth', 'obfuscation', 'zero knowledge', 'independent', 'private', 'incognito', 'escape', 'unblock', 'safe', 'ghost', 'route', 'minimal', 'hacking', 'undetectable', 'invisible', 'autonomy', 'rights', 'defend', 'cloak', 'mask', 'guard', 'unseen', 'unmonitored', 'uncensored', 'unfiltered', 'unrestricted',
+      // Japanese
+      'プライバシー', '匿名性', '暗号化', '自由', 'ログなし', '安全', '検閲抵抗', 'プロキシ', '隠された', '機密', '信頼なし', '安全性', '追跡不可', '自由権', '保護', '盾', 'ステルス', '難読化', 'ゼロ知識', '独立', 'プライベート', '匿名', '脱出', '解除', '安全', 'ゴースト', 'ルート', '最小限', 'ハッキング', '検出不可', '不可視', '自律性', '権利', '防御', 'クローク', 'マスク', 'ガード', '見えない', '監視されない', '検閲なし', 'フィルタなし', '制限なし',
+      // Chinese (Simplified)
+      '隐私', '匿名', '加密', '自由', '无日志', '安全', '抗审查', '代理', '隐藏', '机密', '无信任', '安全性', '不可追踪', '自由权', '保护', '盾牌', '隐身', '混淆', '零知识', '独立', '私人', '隐身', '逃脱', '解锁', '安全', '幽灵', '路径', '极简', '黑客', '不可检测', '隐形', '自治', '权利', '防御', '斗篷', '面具', '守卫', '未被发现', '未被监控', '无审查', '无过滤', '无限制',
+      // Arabic
+      'الخصوصية', 'إخفاء الهوية', 'تشفير', 'حرية', 'بدون سجلات', 'آمن', 'مقاومة الرقابة', 'وكيل', 'مخفي', 'سري', 'بدون ثقة', 'سلامة', 'غير قابل للتتبع', 'حرية', 'حماية', 'درع', 'تخفي', 'تشويش', 'معرفة صفرية', 'مستقل', 'خاص', 'متخفي', 'هروب', 'فتح الحظر', 'آمن', 'شبح', 'مسار', 'حد أدنى', 'اختراق', 'غير قابل للكشف', 'غير مرئي', 'استقلالية', 'حقوق', 'دفاع', 'عباءة', 'قناع', 'حارس', 'غير مرئي', 'غير مراقب', 'بدون رقابة', 'بدون تصفية', 'بدون قيود'
+    ];
+
+    function spawnFloatingWord() {
+      const word = privacyWords[Math.floor(Math.random() * privacyWords.length)];
+      const el = document.createElement('span');
+      el.className = 'floating-word';
+      el.textContent = word;
+      document.body.appendChild(el);
+
+      // Random start position (avoid center)
+      const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+      const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+      const x = Math.random() * vw * 0.8 + vw * 0.1;
+      const y = Math.random() * vh * 0.7 + vh * 0.1;
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+
+      // Initial style
+      el.style.fontSize = '0.8em';
+      el.style.opacity = '0.2';
+      el.style.zIndex = '-10';
+
+      // Animate: grow and fade in/out
+      setTimeout(() => {
+        el.style.transition = 'font-size 2.5s cubic-bezier(.5,0,.5,1), opacity 2.5s linear';
+        el.style.fontSize = `${Math.random() * 2 + 2}em`;
+        el.style.opacity = '0.7';
+      }, 50);
+      setTimeout(() => {
+        el.style.opacity = '0';
+      }, 2500);
+      setTimeout(() => {
+        el.remove();
+      }, 3500);
+    }
+
+    setInterval(spawnFloatingWord, 120);
+  </script>
+</body>
+</html>
